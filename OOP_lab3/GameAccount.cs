@@ -48,8 +48,8 @@ public class GameAccount // Описує гравця в базі даних: Id
         return rating;
     }
 
-    // Викликається у випадку перемоги та записує результат гри в базу даних через сервіс.
-    public void WinGame(string opponentName, Game game, IGameService? gameService = null)
+    // Викликається у випадку перемоги.
+    public void WinGame(string opponentName, Game game)
     {
         if (string.IsNullOrWhiteSpace(opponentName))
             throw new ArgumentException(
@@ -71,12 +71,11 @@ public class GameAccount // Описує гравця в базі даних: Id
         game.Result = GameResult.Win;
 
         history.Add(game);
-        gameService?.CreateGame(game); // Записуємо результат гри в базу даних
         CurrentRating += points; // Перемога додає розраховані бали
     }
 
-    // Викликається у випадку поразки та записує результат гри в базу даних через сервіс.
-    public void LoseGame(string opponentName, Game game, IGameService? gameService = null)
+    // Викликається у випадку поразки.
+    public void LoseGame(string opponentName, Game game)
     {
         if (string.IsNullOrWhiteSpace(opponentName))
             throw new ArgumentException(
@@ -104,17 +103,13 @@ public class GameAccount // Описує гравця в базі даних: Id
         game.Result = GameResult.Lose;
 
         history.Add(game);
-        gameService?.CreateGame(game); // Записуємо результат гри в базу даних
         CurrentRating -= points; // Поразка віднімає розраховані бали
     }
 
-    // Показує статистику та історію ігор гравця (отриману з бази даних через сервіс).
-    public void GetStats(IGameService? gameService = null)
+    // Показує статистику та історію ігор гравця (список ігор передається з рівня Service).
+    public void GetStats(List<Game>? gamesFromDb = null)
     {
-        // Якщо передано сервіс — беремо ігри цього гравця з бази даних за його Id
-        List<Game> playerGames = gameService != null
-            ? gameService.ReadPlayerGamesByPlayerId(Id)
-            : history;
+        List<Game> playerGames = gamesFromDb ?? history;
 
         Console.WriteLine($"Статистика гравця Id={Id}, {UserName} ({GetType().Name}):");
         Console.WriteLine($"Поточний рейтинг: {CurrentRating}");

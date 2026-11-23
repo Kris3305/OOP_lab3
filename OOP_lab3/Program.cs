@@ -12,8 +12,8 @@ IGameAccountRepository accountRepository = new GameAccountRepository(dbContext);
 IGameRepository gameRepository = new GameRepository(dbContext);
 
 // 3. Створюємо об'єкти рівня Service (передаємо їм інтерфейси репозиторіїв)
-IGameAccountService accountService = new GameAccountService(accountRepository);
-IGameService gameService = new GameService(gameRepository);
+IGameAccountService accountService = new GameAccountService(accountRepository, gameRepository);
+IGameService gameService = new GameService(gameRepository, accountRepository);
 
 // 4. [CREATE ACCOUNT] Створення нового гравця через сервіс (CreateAccount)
 Console.WriteLine("=== 1. Створення гравця та робота з базою даних (CRUD) ===");
@@ -30,58 +30,53 @@ foreach (var p in allPlayers)
 }
 Console.WriteLine();
 
-// 6. [READ ACCOUNT BY ID] Отримуємо гравців із бази даних за їхніми Id (ReadAccountById)
-GameAccount player1 = accountService.ReadAccountById(1)!; // Алла (StandardGameAccount)
-GameAccount player2 = accountService.ReadAccountById(2)!; // Богдан (HalfLossGameAccount)
-GameAccount player3 = accountService.ReadAccountById(3)!; // Вікторія (WinStreakGameAccount)
+// 6. [READ ACCOUNT BY ID] Пошук гравця в базі даних за його Id (ReadAccountById)
+GameAccount? player3 = accountService.ReadAccountById(3);
 Console.WriteLine($"[ReadAccountById] Знайдено гравця -> {player3}\n");
 
-// 7. [CREATE GAME] Імітація ігор різних типів (результати автоматично записуються в БД через gameService)
-Console.WriteLine("=== 3. Проведення ігор різних типів із записом у БД (CreateGame) ===");
+// 7. [CREATE GAME / PLAY GAME] Проведення ігор різних типів через рівень Service (GameService)
+Console.WriteLine("=== 3. Проведення ігор різних типів через Service із записом у БД ===");
 
-// --- Ігри для Алли ---
-player1.WinGame("Вікторія", GameFactory.CreateTrainingGame(), gameService);             // Тренувальна гра (+0)
-player1.LoseGame("Богдан", GameFactory.CreateStandardGame(8), gameService);             // Стандартна гра (-8)
-player1.WinGame("Вікторія", GameFactory.CreateSingleRatingGame(12, true), gameService); // Гра з одним рейтингом (+12)
+// --- Ігри для Алли (Id = 1) ---
+gameService.WinGame(1, "Вікторія", GameFactory.CreateTrainingGame());             // Тренувальна гра (+0)
+gameService.LoseGame(1, "Богдан", GameFactory.CreateStandardGame(8));             // Стандартна гра (-8)
+gameService.WinGame(1, "Вікторія", GameFactory.CreateSingleRatingGame(12, true)); // Гра з одним рейтингом (+12)
 
-// --- Ігри для Богдана ---
-player2.WinGame("Вікторія", GameFactory.CreateStandardGame(20), gameService);            // Стандартна гра (+20)
-player2.WinGame("Алла", GameFactory.CreateTrainingGame(), gameService);                  // Тренувальна гра (+0)
-player2.LoseGame("Вікторія", GameFactory.CreateSingleRatingGame(16, true), gameService); // Гра з одним рейтингом (зніме -8)
+// --- Ігри для Богдана (Id = 2) ---
+gameService.WinGame(2, "Вікторія", GameFactory.CreateStandardGame(20));            // Стандартна гра (+20)
+gameService.WinGame(2, "Алла", GameFactory.CreateTrainingGame());                  // Тренувальна гра (+0)
+gameService.LoseGame(2, "Вікторія", GameFactory.CreateSingleRatingGame(16, true)); // Гра з одним рейтингом (зніме -8)
 
-// --- Ігри для Вікторії ---
-player3.WinGame("Алла", GameFactory.CreateStandardGame(10), gameService);               // 1-ша перемога (+10)
-player3.WinGame("Богдан", GameFactory.CreateStandardGame(10), gameService);             // 2-га перемога поспіль (+10 та +5 бонус = +15)
-player3.WinGame("Алла", GameFactory.CreateSingleRatingGame(12, false), gameService);    // Грає не на рейтинг (+0)
-player3.LoseGame("Богдан", GameFactory.CreateStandardGame(8), gameService);             // Поразка (-8, серія скидається)
+// --- Ігри для Вікторії (Id = 3) ---
+gameService.WinGame(3, "Алла", GameFactory.CreateStandardGame(10));               // 1-ша перемога (+10)
+gameService.WinGame(3, "Богдан", GameFactory.CreateStandardGame(10));             // 2-га перемога поспіль (+10 та +5 бонус = +15)
+gameService.WinGame(3, "Алла", GameFactory.CreateSingleRatingGame(12, false));    // Грає не на рейтинг (+0)
+gameService.LoseGame(3, "Богдан", GameFactory.CreateStandardGame(8));             // Поразка (-8, серія скидається)
 
-// Додаткова наочна гра на 13 балів для демонстрації ReadGameById, UpdateGame та DeleteGame
-player3.WinGame("Богдан", GameFactory.CreateStandardGame(13), gameService);
-Console.WriteLine($"[CreateGame] {player3.UserName} зіграла у гру на 13 балів проти Богдана і перемогла. Тепер ігор у БД: {gameService.ReadGames().Count}");
+// Додаткова наочна гра на 13 балів через сервіс
+gameService.WinGame(3, "Богдан", GameFactory.CreateStandardGame(13));
+Console.WriteLine($"[CreateGame] Вікторія зіграла у гру на 13 балів проти Богдана і перемогла. Тепер ігор у БД: {gameService.ReadGames().Count}");
 
 // 8. [READ GAME BY ID] Пошук конкретної гри в базі даних за її Id
 Game? foundGame = gameService.ReadGameById(13);
 Console.WriteLine($"[ReadGameById] Знайдено гру -> {foundGame}");
 
-// 9. [UPDATE] Оновлення даних гравця та гри в базі даних
-player3.UserName = "Вікторія_Pro";
-accountService.UpdateAccount(player3);
-Console.WriteLine($"[UpdateAccount] Оновлено дані гравця в БД -> {accountService.ReadAccountById(player3.Id)}");
-
-if (foundGame != null)
+// 9. [UPDATE] Оновлення даних гравця та його ігор через рівень Service
+if (player3 != null)
 {
-    foundGame.PlayerName = player3.UserName;
-    gameService.UpdateGame(foundGame);
-    Console.WriteLine($"[UpdateGame] Оновлено запис гри в БД -> {gameService.ReadGameById(13)}");
+    player3.UserName = "Вікторія_Pro";
+    accountService.UpdateAccount(player3);
+    Console.WriteLine($"[UpdateAccount] Оновлено дані гравця в БД -> {accountService.ReadAccountById(3)}");
+    Console.WriteLine($"[UpdateGame] Автоматично оновлено запис гри в БД -> {gameService.ReadGameById(13)}");
 }
 
-// 10. [READ PLAYER GAMES BY PLAYER ID] Вивід списку ігор та статистики кожного конкретного гравця
-Console.WriteLine("\n=== 4. Статистика та список ігор кожного гравця з БД (ReadPlayerGamesByPlayerId) ===\n");
-player1.GetStats(gameService);
+// 10. [READ PLAYER GAMES BY PLAYER ID] Вивід списку ігор та статистики кожного конкретного гравця через Service
+Console.WriteLine("\n=== 4. Статистика та список ігор кожного гравця з БД (ShowPlayerStats) ===\n");
+accountService.ShowPlayerStats(1);
 Console.WriteLine();
-player2.GetStats(gameService);
+accountService.ShowPlayerStats(2);
 Console.WriteLine();
-player3.GetStats(gameService);
+accountService.ShowPlayerStats(3);
 
 // 11. [READ GAMES] Вивід всіх ігор, які зберігаються в базі даних (ReadGames)
 Console.WriteLine("\n=== 5. Всі ігри, записані в базі даних (ReadGames) ===");
@@ -98,8 +93,8 @@ Console.WriteLine("\n=== 6. Видалення гри та гравця з ба�
 gameService.DeleteGame(13);
 Console.WriteLine($"[DeleteGame] Гру Id=13 видалено з БД. Залишилось ігор у БД: {gameService.ReadGames().Count}");
 
-accountService.DeleteAccount(player3.Id);
-Console.WriteLine($"[DeleteAccount] Гравця {player3.UserName} (Id={player3.Id}) видалено з БД.");
+accountService.DeleteAccount(3);
+Console.WriteLine($"[DeleteAccount] Гравця Id=3 видалено з БД.");
 Console.WriteLine("Список гравців у БД після видалення:");
 foreach (var p in accountService.ReadAccounts())
 {
@@ -107,11 +102,11 @@ foreach (var p in accountService.ReadAccounts())
 }
 Console.WriteLine(new string('-', 40));
 
-// 14. Демонстрація перевірок на помилки
+// 13. Демонстрація перевірок на помилки через рівень Service
 Console.WriteLine("\nДемонстрація помилки: від'ємний рейтинг");
 try
 {
-    player1.WinGame("Хтось", GameFactory.CreateStandardGame(-5), gameService);
+    gameService.WinGame(1, "Хтось", GameFactory.CreateStandardGame(-5));
 }
 catch (ArgumentException ex)
 {
@@ -122,7 +117,8 @@ Console.WriteLine("\nДемонстрація помилки: рейтинг < 1
 try
 {
     GameAccount weakPlayer = new StandardGameAccount("Слабкий", 5);
-    weakPlayer.LoseGame("Сильний", GameFactory.CreateStandardGame(100), gameService);
+    accountService.CreateAccount(weakPlayer);
+    gameService.LoseGame(weakPlayer.Id, "Сильний", GameFactory.CreateStandardGame(100));
 }
 catch (InvalidOperationException ex)
 {
