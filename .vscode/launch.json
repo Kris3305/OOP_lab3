@@ -9,10 +9,10 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/OOP_lab3/bin/Debug/net8.0/OOP_lab3.dll",
+            "program": "${workspaceFolder}/OOP_lab4/bin/Debug/net8.0/OOP_lab4.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/OOP_lab3",
-            "console": "internalConsole",
+            "cwd": "${workspaceFolder}/OOP_lab4",
+            "console": "integratedTerminal",
             "stopAtEntry": false
         },
         {

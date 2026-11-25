@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.37710.0 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OOP_lab3", "OOP_lab3\OOP_lab3.csproj", "{3903CB03-D641-4285-8368-1A02C986CE2E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OOP_lab4", "OOP_lab4\OOP_lab4.csproj", "{4903CB03-D641-4285-8368-1A02C986CE2F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
